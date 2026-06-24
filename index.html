@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Performance e Crescimento Real - Incorporadora</title>
-    <!-- Tailwind CSS para design moderno e responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome para ícones executivos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
         body {
@@ -20,8 +22,34 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- HEADER INSTITUCIONAL -->
-    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50">
+    <section id="tela-login" class="flex-grow flex items-center justify-center px-4 py-12 bg-slate-950">
+        <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
+            <div class="text-center">
+                <div class="mx-auto h-12 w-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-2xl shadow-md">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h2 class="mt-6 text-2xl font-bold font-display text-slate-900 tracking-tight">Acesso Restrito RPLK</h2>
+                <p class="mt-2 text-xs text-slate-500">Insira suas credenciais corporativas para acessar os indicadores estratégicos.</p>
+            </div>
+            <form class="mt-8 space-y-4" onsubmit="executarLogin(event)">
+                <div>
+                    <label for="login-email" class="block text-xs font-semibold text-slate-600 mb-1">E-mail Corporativo</label>
+                    <input id="login-email" type="email" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label for="login-senha" class="block text-xs font-semibold text-slate-600 mb-1">Senha de Acesso</label>
+                    <input id="login-senha" type="password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition" placeholder="••••••••">
+                </div>
+                <div id="login-erro" class="text-xs text-rose-600 font-medium hidden">
+                    </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 px-4 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-right-to-bracket"></i> Entrar no Sistema
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <header id="app-header" class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="bg-indigo-600 p-2.5 rounded-lg text-white">
@@ -49,14 +77,15 @@
                 <button onclick="resetarDados()" class="bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
                     <i class="fa-solid fa-arrow-rotate-left"></i> Limpar Dados
                 </button>
+                <button onclick="executarLogout()" class="bg-rose-700 hover:bg-rose-600 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Sair do painel com segurança">
+                    <i class="fa-solid fa-power-off"></i> Sair
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- CONTAINER PRINCIPAL -->
-    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+    <main id="app-main" class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 hidden">
         
-        <!-- TABS DE NAVEGAÇÃO -->
         <div class="border-b border-slate-200 mb-8">
             <nav class="flex space-x-8" aria-label="Tabs">
                 <button onclick="switchTab('dashboard')" id="tab-dashboard-btn" class="border-indigo-600 text-indigo-600 border-b-2 py-4 px-1 text-sm font-medium flex items-center gap-2">
@@ -71,12 +100,9 @@
             </nav>
         </div>
 
-        <!-- ABA 1: PAINEL DE SCORE KPI -->
         <section id="tab-dashboard" class="space-y-8">
             
-            <!-- SEÇÃO DE RESULTADO RÁPIDO DO SCORE -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Painel de Medição de Saúde -->
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center">
                     <div>
                         <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Score KPI Geral</h3>
@@ -92,11 +118,9 @@
                     </div>
                 </div>
 
-                <!-- Detalhamento de Performance por Pilar -->
                 <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <h3 class="text-lg font-bold text-slate-800 mb-6 font-display">Performance por Pilar Estratégico</h3>
                     <div class="space-y-5">
-                        <!-- Pilar Expansão -->
                         <div>
                             <div class="flex justify-between items-center mb-1.5">
                                 <span class="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -108,7 +132,6 @@
                                 <div id="pilar-exp-bar" class="bg-blue-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                             </div>
                         </div>
-                        <!-- Pilar Comercial -->
                         <div>
                             <div class="flex justify-between items-center mb-1.5">
                                 <span class="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -120,7 +143,6 @@
                                 <div id="pilar-com-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                             </div>
                         </div>
-                        <!-- Pilar Operação -->
                         <div>
                             <div class="flex justify-between items-center mb-1.5">
                                 <span class="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -132,7 +154,6 @@
                                 <div id="pilar-ope-bar" class="bg-amber-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                             </div>
                         </div>
-                        <!-- Pilar Financeiro -->
                         <div>
                             <div class="flex justify-between items-center mb-1.5">
                                 <span class="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -148,15 +169,13 @@
                 </div>
             </div>
 
-            <!-- HISTÓRICO DE MEDIÇÕES E SALVAMENTO DE PERÍODOS -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Card: Gravar novo Período -->
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
                     <div>
                         <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wider font-display mb-1">
                             <i class="fa-solid fa-cloud-arrow-up text-indigo-600"></i> Salvar Período Atual
                         </h4>
-                        <p class="text-xs text-slate-400 mb-4">Arquive os dados que estão preenchidos na tela para consultas futuras.</p>
+                        <p class="text-xs text-slate-400 mb-4">Arquive os dados que estão preenchidos na tela para consultas futures.</p>
                         
                         <div class="space-y-3">
                             <div>
@@ -170,7 +189,6 @@
                     </button>
                 </div>
 
-                <!-- Card: Lista de Períodos Salvos -->
                 <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
                     <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wider font-display mb-1 flex items-center gap-2">
                         <i class="fa-solid fa-clock-rotate-left text-slate-500"></i> Histórico de Períodos Salvos
@@ -189,14 +207,12 @@
                                 </tr>
                             </thead>
                             <tbody id="tbody-historico" class="divide-y divide-slate-150">
-                                <!-- Preenchido dinamicamente por JS -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- TABELA DE INPUTS DO DASHBOARD -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
@@ -218,7 +234,6 @@
                         </thead>
                         <tbody class="divide-y divide-slate-200 text-sm">
                             
-                            <!-- PILAR 1: EXPANSÃO -->
                             <tr class="bg-blue-50/25">
                                 <td class="py-4 px-6 font-medium text-slate-900">
                                     <div class="flex items-center gap-2">
@@ -266,7 +281,6 @@
                                 </td>
                             </tr>
 
-                            <!-- PILAR 2: COMERCIAL -->
                             <tr class="bg-emerald-50/25">
                                 <td class="py-4 px-6 font-medium text-slate-900">
                                     <div class="flex items-center gap-2">
@@ -320,7 +334,6 @@
                                 <td class="py-4 px-6 text-right text-slate-400">Regra de três padrão</td>
                             </tr>
 
-                            <!-- PILAR 3: OPERAÇÕES -->
                             <tr class="bg-amber-50/25">
                                 <td class="py-4 px-6 font-medium text-slate-900">
                                     <div class="flex items-center gap-2">
@@ -364,7 +377,6 @@
                                 <td class="py-4 px-6 text-right text-rose-500 font-semibold">Cai 1 ponto por cada 1% de desvio físico médio</td>
                             </tr>
 
-                            <!-- PILAR 4: FINANCEIRO -->
                             <tr class="bg-indigo-50/25">
                                 <td class="py-4 px-6 font-medium text-slate-900">
                                     <div class="flex items-center gap-2">
@@ -418,7 +430,6 @@
             </div>
         </section>
 
-        <!-- ABA 2: GESTÃO DE OBRAS (M² EQUIVALENTE) -->
         <section id="tab-obras" class="space-y-8 hidden">
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -447,12 +458,10 @@
                             </tr>
                         </thead>
                         <tbody id="tbody-obras" class="divide-y divide-slate-200 text-sm">
-                            <!-- Inserido dinamicamente via JS -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
 
-                <!-- TOTALIZADORES DAS OBRAS -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-100">
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
                         <span class="text-sm font-semibold text-slate-500">Total Produzido Real no Ano:</span>
@@ -466,7 +475,6 @@
             </div>
         </section>
 
-        <!-- ABA 3: GUIA DE REGRAS E METODOLOGIA -->
         <section id="tab-ajuda" class="space-y-8 hidden">
             <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-4xl mx-auto space-y-6">
                 <h3 class="text-2xl font-bold text-slate-900 font-display">Manual Metodológico do KPI</h3>
@@ -525,26 +533,90 @@
 
     </main>
 
-    <!-- FOOTER -->
     <footer class="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-400">
         <div class="max-w-7xl mx-auto px-4">
             <p>© 2026 Incorporadora & Co. Sistema Inteligente de Monitoramento Corporativo de Performance.</p>
         </div>
     </footer>
 
-    <!-- LÓGICA JAVASCRIPT EXECUTIVA DA PLANILHA -->
     <script>
-        // Dados das obras iniciais (Aba 2)
+        // --- 🔴 CONFIGURAÇÃO DO SEU FIREBASE (COLE SUAS CHAVES AQUI!) ---
+            const firebaseConfig = {
+            apiKey: "AIzaSyCyEp7uUOOfTlgzEV9nDRRv6wO3GxAEGe4",
+            authDomain: "painel-kpis.firebaseapp.com",
+            projectId: "painel-kpis",
+            storageBucket: "painel-kpis.firebasestorage.app",
+            messagingSenderId: "445897928471",
+            appId: "1:445897928471:web:7299e0f7b9baf633bd1152"
+            };
+    
+        
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // --- SISTEMA DE CONTROLE DE TELAS DO FIREBASE ---
+        firebase.auth().onAuthStateChanged((user) => {
+            const telaLogin = document.getElementById('tela-login');
+            const header = document.getElementById('app-header');
+            const main = document.getElementById('app-main');
+
+            if (user) {
+                // Usuário validado com sucesso! Destrava o app e esconde a tela de login
+                telaLogin.classList.add('hidden');
+                header.classList.remove('hidden');
+                main.classList.remove('hidden');
+                
+                // Inicializa as funções do app normalmente
+                carregarEstado();
+                renderObras();
+                calcularTudo();
+                renderHistorico();
+            } else {
+                // Nenhum usuário ativo. Força o bloqueio e exibe a tela de login
+                telaLogin.classList.remove('hidden');
+                header.classList.add('hidden');
+                main.classList.add('hidden');
+            }
+        });
+
+        // Função executada no clique do botão Entrar
+        function executarLogin(event) {
+            event.preventDefault(); // Impede a página de recarregar
+            const email = document.getElementById('login-email').value;
+            const senha = document.getElementById('login-senha').value;
+            const erroDiv = document.getElementById('login-erro');
+            
+            erroDiv.classList.add('hidden');
+
+            firebase.auth().signInWithEmailAndPassword(email, senha)
+                .catch((error) => {
+                    erroDiv.classList.remove('hidden');
+                    if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                        erroDiv.innerText = "E-mail ou senha incorretos.";
+                    } else if (error.code === 'auth/invalid-email') {
+                        erroDiv.innerText = "Formato de e-mail inválido.";
+                    } else {
+                        erroDiv.innerText = "Erro de autenticação: " + error.message;
+                    }
+                });
+        }
+
+        // Função de Logout (Botão Sair)
+        function ejecutarLogout() {
+            if (confirm("Deseja realmente sair do painel?")) {
+                firebase.auth().signOut();
+            }
+        }
+
+        // --- LÓGICA CORE DO SEU PAINEL (MANTIDA INTACTA) ---
         let obras = [
             { id: 1, nome: "Residencial Alvorada", areaTotal: 10000, pctInicio: 60, pctFimPlanejado: 95, pctFim: 90 },
             { id: 2, nome: "Condomínio Bella Vista", areaTotal: 15000, pctInicio: 0, pctFimPlanejado: 25, pctFim: 20 },
             { id: 3, nome: "Edifício Horizon", areaTotal: 8000, pctInicio: 20, pctFimPlanejado: 65, pctFim: 70 }
         ];
 
-        // Lista global de histórico recuperada do localStorage
         let historico = JSON.parse(localStorage.getItem('incorporadora_kpi_history')) || [];
 
-        // Alternador de Abas
         function switchTab(tabId) {
             document.getElementById('tab-dashboard').classList.add('hidden');
             document.getElementById('tab-obras').classList.add('hidden');
@@ -558,7 +630,6 @@
             document.getElementById('tab-' + tabId + '-btn').className = "border-indigo-600 text-indigo-600 border-b-2 py-4 px-1 text-sm font-medium flex items-center gap-2";
         }
 
-        // Renderizar Tabela de Obras
         function renderObras() {
             const tbody = document.getElementById('tbody-obras');
             tbody.innerHTML = '';
@@ -603,7 +674,6 @@
             atualizarTotaisObras();
         }
 
-        // Adicionar Empreendimento
         function adicionarObra() {
             const novoId = obras.length > 0 ? Math.max(...obras.map(o => o.id)) + 1 : 1;
             obras.push({
@@ -618,14 +688,12 @@
             calcularTudo();
         }
 
-        // Remover Obra
         function removerObra(id) {
             obras = obras.filter(o => o.id !== id);
             renderObras();
             calcularTudo();
         }
 
-        // Atualizar Obra Específica
         function atualizarObra(id, campo, valor) {
             const obra = obras.find(o => o.id === id);
             if (obra) {
@@ -639,7 +707,6 @@
             calcularTudo();
         }
 
-        // Atualiza os painéis de totais na Aba de Obras e calcula os desvios
         let totalProduzidoRealGlobal = 0;
         let totalMetaAnualGlobal = 0;
         let desvioPonderadoGlobal = 0;
@@ -668,9 +735,6 @@
             document.getElementById('total-obras-meta').innerText = totalMetaAnualGlobal.toLocaleString() + ' m²';
         }
 
-        // --- FUNÇÕES DO HISTÓRICO DE PERÍODOS ---
-        
-        // Renderiza a lista de períodos gravados na tabela de histórico
         function renderHistorico() {
             const tbody = document.getElementById('tbody-historico');
             tbody.innerHTML = '';
@@ -684,7 +748,6 @@
                 return;
             }
 
-            // Ordena os históricos por data de criação decrescente
             historico.sort((a, b) => b.id - a.id);
 
             historico.forEach((item) => {
@@ -714,7 +777,6 @@
             });
         }
 
-        // Grava os inputs da tela como um novo marco histórico (trimestre ou ano)
         function gravarPeriodoNoHistorico() {
             const nomeInput = document.getElementById('inp-periodo-nome');
             const nome = nomeInput.value.trim();
@@ -724,7 +786,6 @@
                 return;
             }
 
-            // Capturar todos os valores de input da tela
             const state = {
                 expLancMeta: document.getElementById('inp-exp-lancados-meta').value,
                 expLancReal: document.getElementById('inp-exp-lancados-real').value,
@@ -737,16 +798,14 @@
                 finMargMeta: document.getElementById('inp-fin-margem-meta').value,
                 finMargReal: document.getElementById('inp-fin-margem-real').value,
                 finDesvio: document.getElementById('inp-fin-desvio-real').value,
-                obras: JSON.parse(JSON.stringify(obras)) // cópia profunda do vetor de obras
+                obras: JSON.parse(JSON.stringify(obras))
             };
 
-            // Calcular score atual e capturar resultados da tela
             calcularTudo();
             const scoreFinal = parseFloat(document.getElementById('txt-score-final').innerText);
             const status = document.getElementById('badge-status').innerText;
             const dataHoje = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            // Verificar se já existe um histórico com o mesmo nome para sobrescrever
             const indexExistente = historico.findIndex(item => item.nome.toLowerCase() === nome.toLowerCase());
             
             const novoRegistro = {
@@ -768,14 +827,10 @@
                 historico.push(novoRegistro);
             }
 
-            // Salva no LocalStorage
             localStorage.setItem('incorporadora_kpi_history', JSON.stringify(historico));
-            
-            // Limpa o input e atualiza a tabela
             nomeInput.value = '';
             renderHistorico();
             
-            // Mensagem de sucesso amigável
             const containerNotif = document.createElement('div');
             containerNotif.className = "fixed bottom-5 right-5 bg-indigo-900 text-white px-5 py-3 rounded-lg shadow-xl text-xs font-bold border border-indigo-700 flex items-center gap-2 z-50 animate-bounce";
             containerNotif.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i> Gravado no histórico: "${nome}" com Score ${scoreFinal.toFixed(1)}!`;
@@ -783,14 +838,12 @@
             setTimeout(() => containerNotif.remove(), 4000);
         }
 
-        // Carrega um registro histórico de volta para as variáveis e campos da tela
         function carregarPeriodoDoHistorico(id) {
             const registro = historico.find(item => item.id === id);
             if (!registro) return;
 
             const state = registro.state;
             
-            // Restaurar inputs
             document.getElementById('inp-exp-lancados-meta').value = state.expLancMeta;
             document.getElementById('inp-exp-lancados-real').value = state.expLancReal;
             document.getElementById('inp-com-vso-meta').value = state.comVsoMeta;
@@ -803,18 +856,14 @@
             document.getElementById('inp-fin-margem-real').value = state.finMargReal;
             document.getElementById('inp-fin-desvio-real').value = state.finDesvio;
 
-            // Restaurar carteira de obras
             obras = JSON.parse(JSON.stringify(state.obras));
 
-            // Atualizar e calcular a tela
             renderObras();
             calcularTudo();
 
-            // Notificação na tela
             alert(`Período "${registro.nome}" carregado com sucesso!\nScore do Período: ${registro.score.toFixed(1)} (${registro.status})`);
         }
 
-        // Exclui permanentemente um registro histórico
         function excluirPeriodoDoHistorico(id) {
             const registro = historico.find(item => item.id === id);
             if (!registro) return;
@@ -826,16 +875,12 @@
             }
         }
 
-        // FÓRMULA CENTRAL: CALCULA TODO O SCORE E NOTAS
         function calcularTudo() {
-            // Atualizar Obras
             atualizarTotaisObras();
 
-            // Sincronizar dados das obras na Aba 1
             document.getElementById('val-exp-produzidos-meta').innerText = totalMetaAnualGlobal.toLocaleString() + ' m²';
             document.getElementById('val-exp-produzidos-real').innerText = totalProduzidoRealGlobal.toLocaleString() + ' m²';
 
-            // --- PILAR 1: EXPANSÃO (Pesos: 50% / 50%) ---
             const expLancMeta = parseFloat(document.getElementById('inp-exp-lancados-meta').value) || 0;
             const expLancReal = parseFloat(document.getElementById('inp-exp-lancados-real').value) || 0;
             const notaExpLancados = expLancMeta > 0 ? Math.min(10, Math.max(0, (expLancReal / expLancMeta) * 10)) : 0;
@@ -848,8 +893,6 @@
             document.getElementById('pilar-exp-score').innerText = scorePilarExp.toFixed(1) + ' / 10';
             document.getElementById('pilar-exp-bar').style.width = (scorePilarExp * 10) + '%';
 
-
-            // --- PILAR 2: COMERCIAL (Pesos: 40% VSO / 60% M² Vendidos) ---
             const comVsoMeta = parseFloat(document.getElementById('inp-com-vso-meta').value) || 0;
             const comVsoReal = parseFloat(document.getElementById('inp-com-vso-real').value) || 0;
             const notaComVso = comVsoMeta > 0 ? Math.min(10, Math.max(0, (comVsoReal / comVsoMeta) * 10)) : 0;
@@ -864,17 +907,13 @@
             document.getElementById('pilar-com-score').innerText = scorePilarCom.toFixed(1) + ' / 10';
             document.getElementById('pilar-com-bar').style.width = (scorePilarCom * 10) + '%';
 
-
-            // --- PILAR 3: OPERAÇÕES (Pesos: 50% Pós-Obra, 50% Cumprimento de Cronograma) ---
             const opePosMeta = parseFloat(document.getElementById('inp-ope-pos-meta').value) || 0;
             const opePosReal = parseFloat(document.getElementById('inp-ope-pos-real').value) || 0;
             const notaOpePos = opePosMeta > 0 ? Math.min(10, Math.max(0, (opePosReal / opePosMeta) * 10)) : 0;
             document.getElementById('note-ope-pos').innerText = notaOpePos.toFixed(1);
 
-            // O desvio em % vem da média ponderada calculada globalmente das obras
             document.getElementById('val-ope-desvio-real').innerText = desvioPonderadoGlobal.toFixed(1) + '%';
             
-            // Cada 1% de desvio físico médio custa 1 ponto na nota (0 a 10)
             const notaOpeDesvio = Math.min(10, Math.max(0, 10 - desvioPonderadoGlobal));
             document.getElementById('note-ope-desvio').innerText = notaOpeDesvio.toFixed(1);
 
@@ -882,15 +921,12 @@
             document.getElementById('pilar-ope-score').innerText = scorePilarOpe.toFixed(1) + ' / 10';
             document.getElementById('pilar-ope-bar').style.width = (scorePilarOpe * 10) + '%';
 
-
-            // --- PILAR 4: FINANCEIRO (Pesos: 50% Margem / 50% Desvio) ---
             const finMargMeta = parseFloat(document.getElementById('inp-fin-margem-meta').value) || 0;
             const finMargReal = parseFloat(document.getElementById('inp-fin-margem-real').value) || 0;
             const notaFinMargem = finMargMeta > 0 ? Math.min(10, Math.max(0, (finMargReal / finMargMeta) * 10)) : 0;
             document.getElementById('note-fin-margem').innerText = notaFinMargem.toFixed(1);
 
             const finDesvioReal = parseFloat(document.getElementById('inp-fin-desvio-real').value) || 0;
-            // Se desvio = 0%, nota é 10. Se 4% desvio, nota é 6 (subtrai 1 ponto por cada 1%).
             const notaFinDesvio = Math.min(10, Math.max(0, 10 - finDesvioReal));
             document.getElementById('note-fin-desvio').innerText = notaFinDesvio.toFixed(1);
 
@@ -898,11 +934,8 @@
             document.getElementById('pilar-fin-score').innerText = scorePilarFin.toFixed(1) + ' / 10';
             document.getElementById('pilar-fin-bar').style.width = (scorePilarFin * 10) + '%';
 
-
-            // --- SCORE FINAL PONDERADO (Expansão 25% | Comercial 35% | Operações 20% | Financeiro 20%) ---
             const scoreFinal = (scorePilarExp * 0.25) + (scorePilarCom * 0.35) + (scorePilarOpe * 0.20) + (scorePilarFin * 0.20);
             
-            // Atualizar Exibição do Painel Central
             const elementTxtScore = document.getElementById('txt-score-final');
             elementTxtScore.innerText = scoreFinal.toFixed(1);
 
@@ -927,7 +960,6 @@
             }
         }
 
-        // Armazenamento em LocalStorage para persistência do usuário
         function salvarEstado() {
             const inputs = {
                 expLancMeta: document.getElementById('inp-exp-lancados-meta').value,
@@ -947,13 +979,10 @@
             alert('Configuração de simulação salva com sucesso!');
         }
 
-
-        // Dispara o clique no input de arquivo oculto para importação
         function acionarInputImportar() {
             document.getElementById('inp-importar-json').click();
         }
 
-        // Exporta todo o estado atual E o histórico de períodos em um único arquivo de dados JSON
         function exportarDadosCompartilhar() {
             const dadosCompletos = {
                 estadoAtual: {
@@ -986,7 +1015,6 @@
             document.body.removeChild(link);
         }
 
-        // Importa o arquivo JSON selecionado, atualiza o localStorage e renderiza novamente a tela
         function importarDadosCompartilhar(event) {
             const arquivo = event.target.files[0];
             if (!arquivo) return;
@@ -997,7 +1025,6 @@
                     const dadosImportados = JSON.parse(e.target.result);
                     
                     if (dadosImportados.estadoAtual && dadosImportados.historicoSalvo) {
-                        // Restaurar estado atual
                         const state = dadosImportados.estadoAtual;
                         document.getElementById('inp-exp-lancados-meta').value = state.expLancMeta;
                         document.getElementById('inp-exp-lancados-real').value = state.expLancReal;
@@ -1012,49 +1039,39 @@
                         document.getElementById('inp-fin-desvio-real').value = state.finDesvio;
                         obras = state.obras;
 
-                        // Salvar estado atual no localStorage do novo computador/navegador
                         localStorage.setItem('incorporadora_kpi_state', JSON.stringify(state));
 
-                        // Restaurar histórico
                         historico = dadosImportados.historicoSalvo;
                         localStorage.setItem('incorporadora_kpi_history', JSON.stringify(historico));
 
-                        // Renderizar e recalcular
                         renderObras();
                         calcularTudo();
                         renderHistorico();
 
-                        // Limpar o input de arquivo
                         document.getElementById('inp-importar-json').value = '';
-
                         alert('Dados e histórico completo sincronizados com sucesso!');
                     } else {
                         alert('Formato de arquivo inválido para o sistema.');
                     }
                 } catch (erro) {
-                    alert('Erro ao carregar o arquivo. Certifique-se de que é um arquivo .json de dados gerado por este painel.');
+                    alert('Erro ao carregar o arquivo. Certifique-se de que é um arquivo .json válido.');
                     console.error(erro);
                 }
             };
             leitor.readAsText(arquivo);
         }
 
-        // Função para estruturar todos os dados da simulação e gerar um CSV formatado para Excel em Português
         function exportarExcel() {
-            let csv = "\uFEFF"; // UTF-8 BOM para garantir acentuação correta no Excel em português
-            
-            // Cabeçalho institucional do arquivo
+            let csv = "\uFEFF";
             csv += "RELATÓRIO DE SIMULAÇÃO - PERFORMANCE E CRESCIMENTO SAUDÁVEL\n";
             csv += "Empresa;Incorporadora & Co.\n";
             csv += "Data de Exportação;" + new Date().toLocaleDateString('pt-BR') + "\n\n";
             
-            // Resultados Consolidados do Score Geral
             const scoreFinal = parseFloat(document.getElementById('txt-score-final').innerText);
             const status = document.getElementById('badge-status').innerText;
             csv += "SCORE KPI GERAL FINAL;" + scoreFinal.toFixed(1).replace('.', ',') + " / 10\n";
             csv += "STATUS OPERACIONAL;" + status + "\n\n";
             
-            // Resumo de Pontuação por Pilar
             csv += "PILAR ESTRATÉGICO;NOTA DO PILAR (0-10);PESO DE PARTICIPAÇÃO;PONTOS NO SCORE GERAL\n";
             const pilarExp = parseFloat(document.getElementById('pilar-exp-score').innerText).toFixed(1);
             csv += "1. Expansão e Ativos;" + pilarExp.replace('.', ',') + ";25%;" + (pilarExp * 0.25).toFixed(2).replace('.', ',') + "\n";
@@ -1065,7 +1082,6 @@
             const pilarFin = parseFloat(document.getElementById('pilar-fin-score').innerText).toFixed(1);
             csv += "4. Eficiência & Financeiro;" + pilarFin.replace('.', ',') + ";20%;" + (pilarFin * 0.20).toFixed(2).replace('.', ',') + "\n\n";
             
-            // Detalhamento de cada Métrica e Nota individual
             csv += "MATRIZ DE INDICADORES INDIVIDUAIS\n";
             csv += "Pilar;Indicador;Meta Planejada;Realizado no Período;Nota Obtida (0-10)\n";
             
@@ -1078,7 +1094,6 @@
             csv += "Financeiro;Margem Bruta Média;" + document.getElementById('inp-fin-margem-meta').value + "%;" + document.getElementById('inp-fin-margem-real').value + "%;" + parseFloat(document.getElementById('note-fin-margem').innerText).toFixed(1).replace('.', ',') + "\n";
             csv += "Financeiro;Desvio Orçamentário (Estouro);0%;" + document.getElementById('inp-fin-desvio-real').value + "%;" + parseFloat(document.getElementById('note-fin-desvio').innerText).toFixed(1).replace('.', ',') + "\n\n";
             
-            // Portfólio de Obras Físicas (Cálculo de M² Equivalente)
             csv += "CARTEIRA DE EMPREENDIMENTOS (M² EQUIVALENTE)\n";
             csv += "Empreendimento;Área Total (M²);Progresso Início Ano (%);Progresso Fim Ano Planejado (%);Progresso Fim Ano Real (%);Desvio de Obra (%);Produzido Real (M²);Meta do Ano (M²)\n";
             obras.forEach(o => {
@@ -1090,7 +1105,6 @@
                 csv += `${o.nome};${o.areaTotal};${o.pctInicio}%;${o.pctFimPlanejado}%;${o.pctFim}%;${desvio.toFixed(1)}%;${prodReal.toFixed(0)};${metaAnual.toFixed(0)}\n`;
             });
             
-            // Criação e download do arquivo CSV adaptado para o Excel do Brasil
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             const url = URL.createObjectURL(blob);
@@ -1146,14 +1160,6 @@
                 calcularTudo();
             }
         }
-
-        // Inicialização
-        window.onload = function() {
-            carregarEstado();
-            renderObras();
-            calcularTudo();
-            renderHistorico();
-        };
     </script>
 </body>
 </html>
