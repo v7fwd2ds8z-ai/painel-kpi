@@ -3,1157 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Performance e Crescimento Real - Incorporadora</title>
-    <!-- Tailwind CSS para design moderno e responsivo -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome para ícones executivos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>Painel de KPIs Executivo</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
-        .font-display {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
         }
+        .hidden { display: none !important; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #0071e3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover { background-color: #0077ed; }
+        .kpi-card {
+            background: #f5f5f7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .logout-btn {
+            background-color: #e30000;
+            margin-top: 20px;
+        }
+        .logout-btn:hover { background-color: #ff1a1a; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body>
 
-    <!-- HEADER INSTITUCIONAL -->
-    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="bg-indigo-600 p-2.5 rounded-lg text-white">
-                    <i class="fa-solid fa-hotel text-2xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold font-display tracking-tight">Painel KPI geral RPLK</h1>
-                    <p class="text-xs text-slate-400">Sistema Balançado de Metas, Pesos e Medidas para Incorporação Imobiliária</p>
-                </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-2 justify-center md:justify-end">
-                <button onclick="exportarExcel()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-file-excel"></i> Exportar para Excel
-                </button>
-                <button onclick="salvarEstado()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Salvar dados localmente neste navegador">
-                    <i class="fa-solid fa-floppy-disk"></i> Salvar Simulação
-                </button>
-                <button onclick="exportarDadosCompartilhar()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Exportar arquivo para compartilhar com sócios ou equipe">
-                    <i class="fa-solid fa-file-export"></i> Exportar Dados
-                </button>
-                <button onclick="acionarInputImportar()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Importar arquivo JSON de dados compartilhados">
-                    <i class="fa-solid fa-file-import"></i> Importar Dados
-                </button>
-                <input type="file" id="inp-importar-json" accept=".json" class="hidden" onchange="importarDadosCompartilhar(event)">
-                <button onclick="resetarDados()" class="bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-arrow-rotate-left"></i> Limpar Dados
-                </button>
-            </div>
-        </div>
-    </header>
+    <div id="login-screen" class="container">
+        <h2>Acesso ao Painel</h2>
+        <input type="email" id="email" placeholder="E-mail empresarial">
+        <input type="password" id="password" placeholder="Senha">
+        <button onclick="fazerLogin()">Entrar</button>
+        <p id="error-message" style="color: red; font-size: 14px;"></p>
+    </div>
 
-    <!-- CONTAINER PRINCIPAL -->
-    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+    <div id="dashboard-screen" class="container hidden">
+        <h2>Painel de KPIs</h2>
+        <p>Bem-vindo ao ambiente seguro.</p>
         
-        <!-- TABS DE NAVEGAÇÃO -->
-        <div class="border-b border-slate-200 mb-8">
-            <nav class="flex space-x-8" aria-label="Tabs">
-                <button onclick="switchTab('dashboard')" id="tab-dashboard-btn" class="border-indigo-600 text-indigo-600 border-b-2 py-4 px-1 text-sm font-medium flex items-center gap-2">
-                    <i class="fa-solid fa-chart-line"></i> Painel de Score KPI
-                </button>
-                <button onclick="switchTab('obras')" id="tab-obras-btn" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 border-b-2 py-4 px-1 text-sm font-medium flex items-center gap-2">
-                    <i class="fa-solid fa-trowel-bricks"></i> Gestão de Obras (M² Equivalente)
-                </button>
-                <button onclick="switchTab('ajuda')" id="tab-ajuda-btn" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 border-b-2 py-4 px-1 text-sm font-medium flex items-center gap-2">
-                    <i class="fa-solid fa-book-open"></i> Guia de Fórmulas & Regras de Negócio
-                </button>
-            </nav>
+        <div class="kpi-card">
+            <span style="font-size: 14px; color: #6e6e73; display: block;">Faturamento Mensal</span>
+            R$ <span id="faturamento-valor">0,00</span>
         </div>
 
-        <!-- ABA 1: PAINEL DE SCORE KPI -->
-        <section id="tab-dashboard" class="space-y-8">
-            
-            <!-- SEÇÃO DE RESULTADO RÁPIDO DO SCORE -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Painel de Medição de Saúde -->
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center">
-                    <div>
-                        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Score KPI Geral</h3>
-                        <p class="text-xs text-slate-400 mt-1">Nota ponderada geral de crescimento saudável</p>
-                    </div>
-                    <div class="my-6 relative">
-                        <div class="w-40 h-40 rounded-full border-8 border-slate-100 flex items-center justify-center" id="score-ring">
-                            <span class="text-5xl font-black font-display text-slate-800" id="txt-score-final">0.0</span>
-                        </div>
-                    </div>
-                    <div>
-                        <span id="badge-status" class="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">Calculando...</span>
-                    </div>
-                </div>
+        <button class="logout-btn" onclick="fazerLogout()">Sair do Sistema</button>
+    </div>
 
-                <!-- Detalhamento de Performance por Pilar -->
-                <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h3 class="text-lg font-bold text-slate-800 mb-6 font-display">Performance por Pilar Estratégico</h3>
-                    <div class="space-y-5">
-                        <!-- Pilar Expansão -->
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <i class="fa-solid fa-expand text-blue-500"></i> Expansão e Ativos (Peso 25%)
-                                </span>
-                                <span class="text-sm font-bold text-slate-900" id="pilar-exp-score">0.0 / 10</span>
-                            </div>
-                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                                <div id="pilar-exp-bar" class="bg-blue-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <!-- Pilar Comercial -->
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <i class="fa-solid fa-tags text-emerald-500"></i> Comercial & Giro (Peso 35%)
-                                </span>
-                                <span class="text-sm font-bold text-slate-900" id="pilar-com-score">0.0 / 10</span>
-                            </div>
-                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                                <div id="pilar-com-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <!-- Pilar Operação -->
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <i class="fa-solid fa-compass-drafting text-amber-500"></i> Operações & Entrega (Peso 20%)
-                                </span>
-                                <span class="text-sm font-bold text-slate-900" id="pilar-ope-score">0.0 / 10</span>
-                            </div>
-                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                                <div id="pilar-ope-bar" class="bg-amber-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <!-- Pilar Financeiro -->
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <i class="fa-solid fa-scale-balanced text-indigo-500"></i> Eficiência & Financeiro (Peso 20%)
-                                </span>
-                                <span class="text-sm font-bold text-slate-900" id="pilar-fin-score">0.0 / 10</span>
-                            </div>
-                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                                <div id="pilar-fin-bar" class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- HISTÓRICO DE MEDIÇÕES E SALVAMENTO DE PERÍODOS -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Card: Gravar novo Período -->
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wider font-display mb-1">
-                            <i class="fa-solid fa-cloud-arrow-up text-indigo-600"></i> Salvar Período Atual
-                        </h4>
-                        <p class="text-xs text-slate-400 mb-4">Arquive os dados que estão preenchidos na tela para consultas futuras.</p>
-                        
-                        <div class="space-y-3">
-                            <div>
-                                <label for="inp-periodo-nome" class="block text-xs font-semibold text-slate-500 mb-1">Nome do Período / Trimestre</label>
-                                <input type="text" id="inp-periodo-nome" placeholder="Ex: 1T2026, Anual 2025" class="w-full rounded-md border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border">
-                            </div>
-                        </div>
-                    </div>
-                    <button onclick="gravarPeriodoNoHistorico()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white mt-4 py-2 px-4 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-bookmark"></i> Gravar no Histórico
-                    </button>
-                </div>
-
-                <!-- Card: Lista de Períodos Salvos -->
-                <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-                    <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wider font-display mb-1 flex items-center gap-2">
-                        <i class="fa-solid fa-clock-rotate-left text-slate-500"></i> Histórico de Períodos Salvos
-                    </h4>
-                    <p class="text-xs text-slate-400 mb-4">Escolha um período gravado para recarregar todos os dados de obras, notas e KPIs na tela.</p>
-                    
-                    <div class="flex-grow overflow-y-auto max-h-48 border border-slate-100 rounded-lg">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-200">
-                                <tr>
-                                    <th class="py-2.5 px-4">Nome do Período</th>
-                                    <th class="py-2.5 px-4">Salvo em</th>
-                                    <th class="py-2.5 px-4 text-center">Score</th>
-                                    <th class="py-2.5 px-4 text-center">Status</th>
-                                    <th class="py-2.5 px-4 text-right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-historico" class="divide-y divide-slate-150">
-                                <!-- Preenchido dinamicamente por JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TABELA DE INPUTS DO DASHBOARD -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-6 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-800 font-display">Matriz Ponderada de Indicadores</h3>
-                        <p class="text-xs text-slate-500 mt-1">Insira as metas e as realizações do período. O sistema converterá os dados em notas de 0 a 10 de forma automática.</p>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
-                                <th class="py-4 px-6">Pilar & Indicador</th>
-                                <th class="py-4 px-6 w-32 text-center">Peso p/ Pilar</th>
-                                <th class="py-4 px-6 w-44">Meta Planejada</th>
-                                <th class="py-4 px-6 w-44">Realizado Período</th>
-                                <th class="py-4 px-6 w-32 text-center">Nota (0-10)</th>
-                                <th class="py-4 px-6 text-right">Ações / Detalhes</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200 text-sm">
-                            
-                            <!-- PILAR 1: EXPANSÃO -->
-                            <tr class="bg-blue-50/25">
-                                <td class="py-4 px-6 font-medium text-slate-900">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-solid fa-expand text-blue-500"></i>
-                                        <div>
-                                            <span>M² Lançados no Ano</span>
-                                            <p class="text-xxs text-slate-400 font-normal">Capacidade de captação e lançamento</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center text-slate-500">50%</td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" id="inp-exp-lancados-meta" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border" value="20000" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">m²</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" id="inp-exp-lancados-real" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border" value="18000" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">m²</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center font-bold text-slate-800" id="note-exp-lancados">0.0</td>
-                                <td class="py-4 px-6 text-right text-slate-400">Regra de três padrão</td>
-                            </tr>
-                            <tr class="bg-blue-50/25">
-                                <td class="py-4 px-6 font-medium text-slate-900">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-solid fa-trowel-bricks text-blue-500"></i>
-                                        <div>
-                                            <span>M² Produzidos no período</span>
-                                            <p class="text-xxs text-slate-400 font-normal">Soma equivalente calculada na Aba 2</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center text-slate-500">50%</td>
-                                <td class="py-4 px-6 bg-slate-50 font-semibold text-slate-600" id="val-exp-produzidos-meta">0 m²</td>
-                                <td class="py-4 px-6 bg-slate-50 font-semibold text-slate-600" id="val-exp-produzidos-real">0 m²</td>
-                                <td class="py-4 px-6 text-center font-bold text-slate-800" id="note-exp-produzidos">0.0</td>
-                                <td class="py-4 px-6 text-right">
-                                    <button onclick="switchTab('obras')" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs transition">
-                                        Editar Obras <i class="fa-solid fa-angle-right"></i>
-                                    </button>
-                                </td>
-                            </tr>
-
-                            <!-- PILAR 2: COMERCIAL -->
-                            <tr class="bg-emerald-50/25">
-                                <td class="py-4 px-6 font-medium text-slate-900">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-solid fa-chart-line-up text-emerald-500"></i>
-                                        <div>
-                                            <span>VSO Média Mensal</span>
-                                            <p class="text-xxs text-slate-400 font-normal">Velocidade média de vendas</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center text-slate-500">40%</td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" step="0.1" id="inp-com-vso-meta" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border" value="12" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">%</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" step="0.1" id="inp-com-vso-real" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border" value="10" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">%</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center font-bold text-slate-800" id="note-com-vso">0.0</td>
-                                <td class="py-4 px-6 text-right text-slate-400">Regra de três padrão</td>
-                            </tr>
-                            <tr class="bg-emerald-50/25">
-                                <td class="py-4 px-6 font-medium text-slate-900">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-solid fa-wallet text-emerald-500"></i>
-                                        <div>
-                                            <span>M² Vendidos (Volume)</span>
-                                            <p class="text-xxs text-slate-400 font-normal">Total absoluto comercializado</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center text-slate-500">60%</td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" id="inp-com-vendidos-meta" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border" value="15000" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">m²</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" id="inp-com-vendidos-real" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border" value="14500" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">m²</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center font-bold text-slate-800" id="note-com-vendidos">0.0</td>
-                                <td class="py-4 px-6 text-right text-slate-400">Regra de três padrão</td>
-                            </tr>
-
-                            <!-- PILAR 3: OPERAÇÕES -->
-                            <tr class="bg-amber-50/25">
-                                <td class="py-4 px-6 font-medium text-slate-900">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-solid fa-award text-amber-500"></i>
-                                        <div>
-                                            <span>Qualidade no Pós-Obra</span>
-                                            <p class="text-xxs text-slate-400 font-normal">% de vistorias aprovadas de 1ª</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center text-slate-500">50%</td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" id="inp-ope-pos-meta" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border" value="90" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">%</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" id="inp-ope-pos-real" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border" value="85" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">%</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center font-bold text-slate-800" id="note-ope-pos">0.0</td>
-                                <td class="py-4 px-6 text-right text-slate-400">Regra de três padrão</td>
-                            </tr>
-                            <tr class="bg-rose-50/25">
-                                <td class="py-4 px-6 font-medium text-rose-950">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-solid fa-clock text-rose-600"></i>
-                                        <div>
-                                            <span class="font-semibold">Cumprimento de Cronograma (Obras)</span>
-                                            <p class="text-xxs text-rose-500 font-normal">Desvio físico médio ponderado calculado na Aba 2</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center text-rose-600 font-semibold">50%</td>
-                                <td class="py-4 px-6 bg-rose-50/50 font-semibold text-rose-800">0% desvio (Meta)</td>
-                                <td class="py-4 px-6 bg-rose-50/50 font-semibold text-rose-800 text-center" id="val-ope-desvio-real">0%</td>
-                                <td class="py-4 px-6 text-center font-bold text-rose-600" id="note-ope-desvio">0.0</td>
-                                <td class="py-4 px-6 text-right text-rose-500 font-semibold">Cai 1 ponto por cada 1% de desvio físico médio</td>
-                            </tr>
-
-                            <!-- PILAR 4: FINANCEIRO -->
-                            <tr class="bg-indigo-50/25">
-                                <td class="py-4 px-6 font-medium text-slate-900">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-solid fa-badge-percent text-indigo-500"></i>
-                                        <div>
-                                            <span>Margem Bruta Média</span>
-                                            <p class="text-xxs text-slate-400 font-normal">Média ponderada do lucro bruto</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center text-slate-500">50%</td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" id="inp-fin-margem-meta" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border" value="35" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">%</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" id="inp-fin-margem-real" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border" value="33" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">%</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center font-bold text-slate-800" id="note-fin-margem">0.0</td>
-                                <td class="py-4 px-6 text-right text-slate-400">Regra de três padrão</td>
-                            </tr>
-                            <tr class="bg-indigo-50/25 text-indigo-950">
-                                <td class="py-4 px-6 font-medium">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-solid fa-coins text-indigo-500"></i>
-                                        <div>
-                                            <span>Desvio Orçamentário (Obras)</span>
-                                            <p class="text-xxs text-indigo-400 font-normal">% de estouro em relação ao orçado</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center text-slate-500">50%</td>
-                                <td class="py-4 px-6 font-semibold text-indigo-800">0% (Meta = sem estouro)</td>
-                                <td class="py-4 px-6">
-                                    <div class="relative rounded-md shadow-sm">
-                                        <input type="number" id="inp-fin-desvio-real" class="w-full rounded-md border-slate-350 pr-8 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1.5 border font-bold" value="4" onchange="calcularTudo()">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 font-semibold text-slate-400 text-xs pointer-events-none">%</div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6 text-center font-bold text-slate-800" id="note-fin-desvio">0.0</td>
-                                <td class="py-4 px-6 text-right text-indigo-600 font-semibold">Cai 1 ponto por cada 1% de estouro</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- ABA 2: GESTÃO DE OBRAS (M² EQUIVALENTE) -->
-        <section id="tab-obras" class="space-y-8 hidden">
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-800 font-display">Calculadora de Evolução de M² Equivalente & Cronograma</h3>
-                        <p class="text-xs text-slate-500 mt-1">Insira e acompanhe o andamento das obras físicas. Defina o progresso planejado versus o real para mensurar os desvios físicos.</p>
-                    </div>
-                    <button onclick="adicionarObra()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 self-start">
-                        <i class="fa-solid fa-plus"></i> Adicionar Novo Empreendimento
-                    </button>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse" id="tbl-obras">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
-                                <th class="py-4 px-6">Nome do Empreendimento</th>
-                                <th class="py-4 px-6 w-32">Área Total (M²)</th>
-                                <th class="py-4 px-6 w-24 text-center">% Início Ano</th>
-                                <th class="py-4 px-6 w-24 text-center">% Planejado Fim</th>
-                                <th class="py-4 px-6 w-24 text-center">% Real Fim</th>
-                                <th class="py-4 px-6 w-24 text-center">Desvio (%)</th>
-                                <th class="py-4 px-6 w-32 text-center">Produzido Real (M²)</th>
-                                <th class="py-4 px-6 w-32 text-center">Meta do Ano (M²)</th>
-                                <th class="py-4 px-6 w-16"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody-obras" class="divide-y divide-slate-200 text-sm">
-                            <!-- Inserido dinamicamente via JS -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- TOTALIZADORES DAS OBRAS -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-100">
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
-                        <span class="text-sm font-semibold text-slate-500">Total Produzido Real no Ano:</span>
-                        <span class="text-lg font-bold text-indigo-700" id="total-obras-produzido">0 m²</span>
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
-                        <span class="text-sm font-semibold text-slate-500">Total Planejado/Meta no Ano:</span>
-                        <span class="text-lg font-bold text-indigo-700" id="total-obras-meta">0 m²</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ABA 3: GUIA DE REGRAS E METODOLOGIA -->
-        <section id="tab-ajuda" class="space-y-8 hidden">
-            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-4xl mx-auto space-y-6">
-                <h3 class="text-2xl font-bold text-slate-900 font-display">Manual Metodológico do KPI</h3>
-                <p class="text-slate-600 leading-relaxed">
-                    Muitas incorporadoras operam no chamado <strong>"giro em falso"</strong>: lançam um volume volumoso de m², mas falham na velocidade de vendas, sofrem estouros de orçamento na ponta construtiva ou atrasam obras. Isso consome caixa rápido e mascara problemas. Este sistema de score balança a visão executiva para dar um panorama real da solidez operacional.
-                </p>
-
-                <div class="border-t border-slate-100 my-6"></div>
-
-                <div class="space-y-4">
-                    <h4 class="text-lg font-bold text-slate-800 flex items-center gap-2 font-display">
-                        <i class="fa-solid fa-compass-drafting text-indigo-500"></i> Metodologia de M² Equivalente (Aba 2)
-                    </h4>
-                    <p class="text-sm text-slate-600 leading-relaxed">
-                        Medir obras em estágios diferentes é um desafio. Nossa solução consiste em aplicar o percentual de evolução física (relação físico-financeira das obras) sobre a área total do projeto para encontrar a <strong>Produção Real Equivalente</strong>.
-                    </p>
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono text-xs text-slate-700">
-                        Fórmula da Obra: Produção Equivalente (M²) = Área Total (M²) × (% Fim do Ano - % Início do Ano)<br>
-                        Nota do Indicador = Mínimo(10; (Soma Realizado / Soma Meta) × 10)
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <h4 class="text-lg font-bold text-slate-800 flex items-center gap-2 font-display">
-                        <i class="fa-solid fa-chart-line-up text-emerald-500"></i> Velocidade de Vendas - VSO (Aba 1)
-                    </h4>
-                    <p class="text-sm text-slate-600 leading-relaxed">
-                        A VSO média do ano calcula de forma ponderada ou direta a média de unidades comercializadas sobre a oferta ativa mensal. A nota avalia a assertividade comercial com relação ao plano estratégico da empresa.
-                    </p>
-                </div>
-
-                <div class="space-y-4">
-                    <h4 class="text-lg font-bold text-slate-800 flex items-center gap-2 font-display">
-                        <i class="fa-solid fa-scale-balanced text-indigo-500"></i> Desvio Orçamentário & Estouro de Custo
-                    </h4>
-                    <p class="text-sm text-slate-600 leading-relaxed">
-                        A margem de uma incorporação é consumida caso o custo construtivo real supere o orçamento inicial. O KPI foi programado para assumir **Nota 10** se houver **0% de desvio**. Para cada 1% de estouro do orçamento na ponta de obras, a nota diminui em 1 ponto.
-                    </p>
-                </div>
-
-                <div class="space-y-4">
-                    <h4 class="text-lg font-bold text-slate-800 flex items-center gap-2 font-display">
-                        <i class="fa-solid fa-clock text-rose-500"></i> Desvio de Cronograma Físico Ponderado (Pilar Operações)
-                    </h4>
-                    <p class="text-sm text-slate-600 leading-relaxed">
-                        Atrasar uma obra quebra a confiança do cliente e inflaciona custos. No nosso score, este indicador calcula de forma automática e precisa o **Desvio Físico de Cronograma** ponderado pela metragem quadrada total de cada canteiro de obras.
-                    </p>
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono text-xs text-slate-700">
-                        Desvio Individual de Obra = Máximo ( 0 ; % Planejado Fim - % Real Fim )<br>
-                        Desvio Médio Ponderado = Soma ( Área da Obra × Desvio Individual ) / Soma ( Áreas Totais )<br>
-                        Nota do Indicador = Máximo ( 0 ; 10 - Desvio Médio Ponderado )
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-400">
-        <div class="max-w-7xl mx-auto px-4">
-            <p>© 2026 Incorporadora & Co. Sistema Inteligente de Monitoramento Corporativo de Performance.</p>
-        </div>
-    </footer>
-
-    <!-- LÓGICA JAVASCRIPT EXECUTIVA DA PLANILHA -->
     <script>
-        // Dados das obras iniciais (Aba 2)
-        let obras = [
-            { id: 1, nome: "Residencial Alvorada", areaTotal: 10000, pctInicio: 60, pctFimPlanejado: 95, pctFim: 90 },
-            { id: 2, nome: "Condomínio Bella Vista", areaTotal: 15000, pctInicio: 0, pctFimPlanejado: 25, pctFim: 20 },
-            { id: 3, nome: "Edifício Horizon", areaTotal: 8000, pctInicio: 20, pctFimPlanejado: 65, pctFim: 70 }
-        ];
-
-        // Lista global de histórico recuperada do localStorage
-        let historico = JSON.parse(localStorage.getItem('incorporadora_kpi_history')) || [];
-
-        // Alternador de Abas
-        function switchTab(tabId) {
-            document.getElementById('tab-dashboard').classList.add('hidden');
-            document.getElementById('tab-obras').classList.add('hidden');
-            document.getElementById('tab-ajuda').classList.add('hidden');
-            
-            document.getElementById('tab-dashboard-btn').className = "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 border-b-2 py-4 px-1 text-sm font-medium flex items-center gap-2";
-            document.getElementById('tab-obras-btn').className = "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 border-b-2 py-4 px-1 text-sm font-medium flex items-center gap-2";
-            document.getElementById('tab-ajuda-btn').className = "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 border-b-2 py-4 px-1 text-sm font-medium flex items-center gap-2";
-
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
-            document.getElementById('tab-' + tabId + '-btn').className = "border-indigo-600 text-indigo-600 border-b-2 py-4 px-1 text-sm font-medium flex items-center gap-2";
-        }
-
-        // Renderizar Tabela de Obras
-        function renderObras() {
-            const tbody = document.getElementById('tbody-obras');
-            tbody.innerHTML = '';
-            
-            obras.forEach((obra) => {
-                const evolucaoReal = Math.max(0, obra.pctFim - obra.pctInicio);
-                const evolucaoPlan = Math.max(0, obra.pctFimPlanejado - obra.pctInicio);
-
-                const produzidoReal = (obra.areaTotal * (evolucaoReal / 100)).toFixed(0);
-                const metaAnual = (obra.areaTotal * (evolucaoPlan / 100)).toFixed(0);
-                const desvio = Math.max(0, obra.pctFimPlanejado - obra.pctFim);
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="py-4 px-6">
-                        <input type="text" value="${obra.nome}" onchange="atualizarObra(${obra.id}, 'nome', this.value)" class="bg-transparent hover:bg-slate-50 focus:bg-white border border-transparent focus:border-slate-300 rounded px-2 py-1 font-semibold text-slate-800 w-full">
-                    </td>
-                    <td class="py-4 px-6">
-                        <input type="number" value="${obra.areaTotal}" onchange="atualizarObra(${obra.id}, 'areaTotal', this.value)" class="bg-transparent hover:bg-slate-50 focus:bg-white border border-transparent focus:border-slate-300 rounded px-2 py-1 text-slate-800 w-24">
-                    </td>
-                    <td class="py-4 px-6 text-center">
-                        <input type="number" min="0" max="100" value="${obra.pctInicio}" onchange="atualizarObra(${obra.id}, 'pctInicio', this.value)" class="bg-transparent hover:bg-slate-50 focus:bg-white border border-transparent focus:border-slate-300 rounded px-2 py-1 text-slate-800 w-16 text-center">%
-                    </td>
-                    <td class="py-4 px-6 text-center">
-                        <input type="number" min="0" max="100" value="${obra.pctFimPlanejado}" onchange="atualizarObra(${obra.id}, 'pctFimPlanejado', this.value)" class="bg-transparent hover:bg-slate-50 focus:bg-white border border-transparent focus:border-slate-300 rounded px-2 py-1 text-slate-800 w-16 text-center">%
-                    </td>
-                    <td class="py-4 px-6 text-center">
-                        <input type="number" min="0" max="100" value="${obra.pctFim}" onchange="atualizarObra(${obra.id}, 'pctFim', this.value)" class="bg-transparent hover:bg-slate-50 focus:bg-white border border-transparent focus:border-slate-300 rounded px-2 py-1 text-slate-800 w-16 text-center">%
-                    </td>
-                    <td class="py-4 px-6 text-center font-bold text-rose-600">${desvio.toFixed(1)}%</td>
-                    <td class="py-4 px-6 text-center font-bold text-indigo-700">${produzidoReal} m²</td>
-                    <td class="py-4 px-6 text-center font-semibold text-slate-600">${metaAnual} m²</td>
-                    <td class="py-4 px-6 text-right">
-                        <button onclick="removerObra(${obra.id})" class="text-rose-500 hover:text-rose-700 transition">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            atualizarTotaisObras();
-        }
-
-        // Adicionar Empreendimento
-        function adicionarObra() {
-            const novoId = obras.length > 0 ? Math.max(...obras.map(o => o.id)) + 1 : 1;
-            obras.push({
-                id: novoId,
-                nome: "Nova Obra Simulação",
-                areaTotal: 10000,
-                pctInicio: 0,
-                pctFimPlanejado: 15,
-                pctFim: 10
-            });
-            renderObras();
-            calcularTudo();
-        }
-
-        // Remover Obra
-        function removerObra(id) {
-            obras = obras.filter(o => o.id !== id);
-            renderObras();
-            calcularTudo();
-        }
-
-        // Atualizar Obra Específica
-        function atualizarObra(id, campo, valor) {
-            const obra = obras.find(o => o.id === id);
-            if (obra) {
-                if (campo === 'nome') {
-                    obra[campo] = valor;
-                } else {
-                    obra[campo] = parseFloat(valor) || 0;
-                }
-            }
-            renderObras();
-            calcularTudo();
-        }
-
-        // Atualiza os painéis de totais na Aba de Obras e calcula os desvios
-        let totalProduzidoRealGlobal = 0;
-        let totalMetaAnualGlobal = 0;
-        let desvioPonderadoGlobal = 0;
-
-        function atualizarTotaisObras() {
-            totalProduzidoRealGlobal = 0;
-            totalMetaAnualGlobal = 0;
-            let somaPesosDesvio = 0;
-            let somaAreas = 0;
-
-            obras.forEach(o => {
-                const evolucaoReal = Math.max(0, o.pctFim - o.pctInicio);
-                const evolucaoPlan = Math.max(0, o.pctFimPlanejado - o.pctInicio);
-
-                totalProduzidoRealGlobal += (o.areaTotal * (evolucaoReal / 100));
-                totalMetaAnualGlobal += (o.areaTotal * (evolucaoPlan / 100));
-
-                const desvioObra = Math.max(0, o.pctFimPlanejado - o.pctFim);
-                somaPesosDesvio += (o.areaTotal * desvioObra);
-                somaAreas += o.areaTotal;
-            });
-
-            desvioPonderadoGlobal = somaAreas > 0 ? (somaPesosDesvio / somaAreas) : 0;
-
-            document.getElementById('total-obras-produzido').innerText = totalProduzidoRealGlobal.toLocaleString() + ' m²';
-            document.getElementById('total-obras-meta').innerText = totalMetaAnualGlobal.toLocaleString() + ' m²';
-        }
-
-        // --- FUNÇÕES DO HISTÓRICO DE PERÍODOS ---
-        
-        // Renderiza a lista de períodos gravados na tabela de histórico
-        function renderHistorico() {
-            const tbody = document.getElementById('tbody-historico');
-            tbody.innerHTML = '';
-
-            if (historico.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="py-6 text-center text-slate-400 font-medium">Nenhum período salvo no histórico local de simulações.</td>
-                    </tr>
-                `;
-                return;
-            }
-
-            // Ordena os históricos por data de criação decrescente
-            historico.sort((a, b) => b.id - a.id);
-
-            historico.forEach((item) => {
-                let badgeClass = "bg-rose-100 text-rose-800";
-                if (item.score >= 8.5) badgeClass = "bg-emerald-100 text-emerald-800";
-                else if (item.score >= 7.0) badgeClass = "bg-amber-100 text-amber-800";
-
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition-colors";
-                tr.innerHTML = `
-                    <td class="py-3 px-4 font-bold text-slate-700">${item.nome}</td>
-                    <td class="py-3 px-4 text-slate-400">${item.dataSalva}</td>
-                    <td class="py-3 px-4 text-center font-black text-slate-800">${item.score.toFixed(1)}</td>
-                    <td class="py-3 px-4 text-center">
-                        <span class="px-2 py-0.5 rounded-full text-xxs font-bold uppercase tracking-wider ${badgeClass}">${item.status}</span>
-                    </td>
-                    <td class="py-3 px-4 text-right space-x-2">
-                        <button onclick="carregarPeriodoDoHistorico(${item.id})" class="text-indigo-600 hover:text-indigo-800 font-bold transition">
-                            <i class="fa-solid fa-folder-open"></i> Carregar
-                        </button>
-                        <button onclick="excluirPeriodoDoHistorico(${item.id})" class="text-rose-500 hover:text-rose-700 transition">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Grava os inputs da tela como um novo marco histórico (trimestre ou ano)
-        function gravarPeriodoNoHistorico() {
-            const nomeInput = document.getElementById('inp-periodo-nome');
-            const nome = nomeInput.value.trim();
-
-            if (!nome) {
-                alert('Por favor, digite um nome identificador para este período (ex: 1T2026).');
-                return;
-            }
-
-            // Capturar todos os valores de input da tela
-            const state = {
-                expLancMeta: document.getElementById('inp-exp-lancados-meta').value,
-                expLancReal: document.getElementById('inp-exp-lancados-real').value,
-                comVsoMeta: document.getElementById('inp-com-vso-meta').value,
-                comVsoReal: document.getElementById('inp-com-vso-real').value,
-                comVendMeta: document.getElementById('inp-com-vendidos-meta').value,
-                comVendReal: document.getElementById('inp-com-vendidos-real').value,
-                opePosMeta: document.getElementById('inp-ope-pos-meta').value,
-                opePosReal: document.getElementById('inp-ope-pos-real').value,
-                finMargMeta: document.getElementById('inp-fin-margem-meta').value,
-                finMargReal: document.getElementById('inp-fin-margem-real').value,
-                finDesvio: document.getElementById('inp-fin-desvio-real').value,
-                obras: JSON.parse(JSON.stringify(obras)) // cópia profunda do vetor de obras
-            };
-
-            // Calcular score atual e capturar resultados da tela
-            calcularTudo();
-            const scoreFinal = parseFloat(document.getElementById('txt-score-final').innerText);
-            const status = document.getElementById('badge-status').innerText;
-            const dataHoje = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-            // Verificar se já existe um histórico com o mesmo nome para sobrescrever
-            const indexExistente = historico.findIndex(item => item.nome.toLowerCase() === nome.toLowerCase());
-            
-            const novoRegistro = {
-                id: Date.now(),
-                nome: nome,
-                dataSalva: dataHoje,
-                score: scoreFinal,
-                status: status,
-                state: state
-            };
-
-            if (indexExistente !== -1) {
-                if (confirm(`Já existe um período chamado "${nome}" no histórico. Deseja sobrescrevê-lo com os novos valores?`)) {
-                    historico[indexExistente] = novoRegistro;
-                } else {
-                    return;
-                }
-            } else {
-                historico.push(novoRegistro);
-            }
-
-            // Salva no LocalStorage
-            localStorage.setItem('incorporadora_kpi_history', JSON.stringify(historico));
-            
-            // Limpa o input e atualiza a tabela
-            nomeInput.value = '';
-            renderHistorico();
-            
-            // Mensagem de sucesso amigável
-            const containerNotif = document.createElement('div');
-            containerNotif.className = "fixed bottom-5 right-5 bg-indigo-900 text-white px-5 py-3 rounded-lg shadow-xl text-xs font-bold border border-indigo-700 flex items-center gap-2 z-50 animate-bounce";
-            containerNotif.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i> Gravado no histórico: "${nome}" com Score ${scoreFinal.toFixed(1)}!`;
-            document.body.appendChild(containerNotif);
-            setTimeout(() => containerNotif.remove(), 4000);
-        }
-
-        // Carrega um registro histórico de volta para as variáveis e campos da tela
-        function carregarPeriodoDoHistorico(id) {
-            const registro = historico.find(item => item.id === id);
-            if (!registro) return;
-
-            const state = registro.state;
-            
-            // Restaurar inputs
-            document.getElementById('inp-exp-lancados-meta').value = state.expLancMeta;
-            document.getElementById('inp-exp-lancados-real').value = state.expLancReal;
-            document.getElementById('inp-com-vso-meta').value = state.comVsoMeta;
-            document.getElementById('inp-com-vso-real').value = state.comVsoReal;
-            document.getElementById('inp-com-vendidos-meta').value = state.comVendMeta;
-            document.getElementById('inp-com-vendidos-real').value = state.comVendReal;
-            document.getElementById('inp-ope-pos-meta').value = state.opePosMeta;
-            document.getElementById('inp-ope-pos-real').value = state.opePosReal;
-            document.getElementById('inp-fin-margem-meta').value = state.finMargMeta;
-            document.getElementById('inp-fin-margem-real').value = state.finMargReal;
-            document.getElementById('inp-fin-desvio-real').value = state.finDesvio;
-
-            // Restaurar carteira de obras
-            obras = JSON.parse(JSON.stringify(state.obras));
-
-            // Atualizar e calcular a tela
-            renderObras();
-            calcularTudo();
-
-            // Notificação na tela
-            alert(`Período "${registro.nome}" carregado com sucesso!\nScore do Período: ${registro.score.toFixed(1)} (${registro.status})`);
-        }
-
-        // Exclui permanentemente um registro histórico
-        function excluirPeriodoDoHistorico(id) {
-            const registro = historico.find(item => item.id === id);
-            if (!registro) return;
-
-            if (confirm(`Tem certeza de que deseja remover o período "${registro.nome}" do seu histórico?`)) {
-                historico = historico.filter(item => item.id !== id);
-                localStorage.setItem('incorporadora_kpi_history', JSON.stringify(historico));
-                renderHistorico();
-            }
-        }
-
-        // FÓRMULA CENTRAL: CALCULA TODO O SCORE E NOTAS
-        function calcularTudo() {
-            // Atualizar Obras
-            atualizarTotaisObras();
-
-            // Sincronizar dados das obras na Aba 1
-            document.getElementById('val-exp-produzidos-meta').innerText = totalMetaAnualGlobal.toLocaleString() + ' m²';
-            document.getElementById('val-exp-produzidos-real').innerText = totalProduzidoRealGlobal.toLocaleString() + ' m²';
-
-            // --- PILAR 1: EXPANSÃO (Pesos: 50% / 50%) ---
-            const expLancMeta = parseFloat(document.getElementById('inp-exp-lancados-meta').value) || 0;
-            const expLancReal = parseFloat(document.getElementById('inp-exp-lancados-real').value) || 0;
-            const notaExpLancados = expLancMeta > 0 ? Math.min(10, Math.max(0, (expLancReal / expLancMeta) * 10)) : 0;
-            document.getElementById('note-exp-lancados').innerText = notaExpLancados.toFixed(1);
-
-            const notaExpProduzidos = totalMetaAnualGlobal > 0 ? Math.min(10, Math.max(0, (totalProduzidoRealGlobal / totalMetaAnualGlobal) * 10)) : 0;
-            document.getElementById('note-exp-produzidos').innerText = notaExpProduzidos.toFixed(1);
-
-            const scorePilarExp = (notaExpLancados * 0.5) + (notaExpProduzidos * 0.5);
-            document.getElementById('pilar-exp-score').innerText = scorePilarExp.toFixed(1) + ' / 10';
-            document.getElementById('pilar-exp-bar').style.width = (scorePilarExp * 10) + '%';
-
-
-            // --- PILAR 2: COMERCIAL (Pesos: 40% VSO / 60% M² Vendidos) ---
-            const comVsoMeta = parseFloat(document.getElementById('inp-com-vso-meta').value) || 0;
-            const comVsoReal = parseFloat(document.getElementById('inp-com-vso-real').value) || 0;
-            const notaComVso = comVsoMeta > 0 ? Math.min(10, Math.max(0, (comVsoReal / comVsoMeta) * 10)) : 0;
-            document.getElementById('note-com-vso').innerText = notaComVso.toFixed(1);
-
-            const comVendMeta = parseFloat(document.getElementById('inp-com-vendidos-meta').value) || 0;
-            const comVendReal = parseFloat(document.getElementById('inp-com-vendidos-real').value) || 0;
-            const notaComVendidos = comVendMeta > 0 ? Math.min(10, Math.max(0, (comVendReal / comVendMeta) * 10)) : 0;
-            document.getElementById('note-com-vendidos').innerText = notaComVendidos.toFixed(1);
-
-            const scorePilarCom = (notaComVso * 0.4) + (notaComVendidos * 0.6);
-            document.getElementById('pilar-com-score').innerText = scorePilarCom.toFixed(1) + ' / 10';
-            document.getElementById('pilar-com-bar').style.width = (scorePilarCom * 10) + '%';
-
-
-            // --- PILAR 3: OPERAÇÕES (Pesos: 50% Pós-Obra, 50% Cumprimento de Cronograma) ---
-            const opePosMeta = parseFloat(document.getElementById('inp-ope-pos-meta').value) || 0;
-            const opePosReal = parseFloat(document.getElementById('inp-ope-pos-real').value) || 0;
-            const notaOpePos = opePosMeta > 0 ? Math.min(10, Math.max(0, (opePosReal / opePosMeta) * 10)) : 0;
-            document.getElementById('note-ope-pos').innerText = notaOpePos.toFixed(1);
-
-            // O desvio em % vem da média ponderada calculada globalmente das obras
-            document.getElementById('val-ope-desvio-real').innerText = desvioPonderadoGlobal.toFixed(1) + '%';
-            
-            // Cada 1% de desvio físico médio custa 1 ponto na nota (0 a 10)
-            const notaOpeDesvio = Math.min(10, Math.max(0, 10 - desvioPonderadoGlobal));
-            document.getElementById('note-ope-desvio').innerText = notaOpeDesvio.toFixed(1);
-
-            const scorePilarOpe = (notaOpePos * 0.5) + (notaOpeDesvio * 0.5);
-            document.getElementById('pilar-ope-score').innerText = scorePilarOpe.toFixed(1) + ' / 10';
-            document.getElementById('pilar-ope-bar').style.width = (scorePilarOpe * 10) + '%';
-
-
-            // --- PILAR 4: FINANCEIRO (Pesos: 50% Margem / 50% Desvio) ---
-            const finMargMeta = parseFloat(document.getElementById('inp-fin-margem-meta').value) || 0;
-            const finMargReal = parseFloat(document.getElementById('inp-fin-margem-real').value) || 0;
-            const notaFinMargem = finMargMeta > 0 ? Math.min(10, Math.max(0, (finMargReal / finMargMeta) * 10)) : 0;
-            document.getElementById('note-fin-margem').innerText = notaFinMargem.toFixed(1);
-
-            const finDesvioReal = parseFloat(document.getElementById('inp-fin-desvio-real').value) || 0;
-            // Se desvio = 0%, nota é 10. Se 4% desvio, nota é 6 (subtrai 1 ponto por cada 1%).
-            const notaFinDesvio = Math.min(10, Math.max(0, 10 - finDesvioReal));
-            document.getElementById('note-fin-desvio').innerText = notaFinDesvio.toFixed(1);
-
-            const scorePilarFin = (notaFinMargem * 0.5) + (notaFinDesvio * 0.5);
-            document.getElementById('pilar-fin-score').innerText = scorePilarFin.toFixed(1) + ' / 10';
-            document.getElementById('pilar-fin-bar').style.width = (scorePilarFin * 10) + '%';
-
-
-            // --- SCORE FINAL PONDERADO (Expansão 25% | Comercial 35% | Operações 20% | Financeiro 20%) ---
-            const scoreFinal = (scorePilarExp * 0.25) + (scorePilarCom * 0.35) + (scorePilarOpe * 0.20) + (scorePilarFin * 0.20);
-            
-            // Atualizar Exibição do Painel Central
-            const elementTxtScore = document.getElementById('txt-score-final');
-            elementTxtScore.innerText = scoreFinal.toFixed(1);
-
-            const badge = document.getElementById('badge-status');
-            const ring = document.getElementById('score-ring');
-
-            if (scoreFinal >= 8.5) {
-                badge.innerText = "Crescimento Saudável";
-                badge.className = "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800";
-                ring.className = "w-40 h-40 rounded-full border-8 border-emerald-500 flex items-center justify-center";
-                elementTxtScore.className = "text-5xl font-black font-display text-emerald-600";
-            } else if (scoreFinal >= 7.0) {
-                badge.innerText = "Alerta de Descompasso";
-                badge.className = "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800";
-                ring.className = "w-40 h-40 rounded-full border-8 border-amber-500 flex items-center justify-center";
-                elementTxtScore.className = "text-5xl font-black font-display text-amber-600";
-            } else {
-                badge.innerText = "Giro em Falso Crítico";
-                badge.className = "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-100 text-rose-800";
-                ring.className = "w-40 h-40 rounded-full border-8 border-rose-500 flex items-center justify-center";
-                elementTxtScore.className = "text-5xl font-black font-display text-rose-600";
-            }
-        }
-
-        // Armazenamento em LocalStorage para persistência do usuário
-        function salvarEstado() {
-            const inputs = {
-                expLancMeta: document.getElementById('inp-exp-lancados-meta').value,
-                expLancReal: document.getElementById('inp-exp-lancados-real').value,
-                comVsoMeta: document.getElementById('inp-com-vso-meta').value,
-                comVsoReal: document.getElementById('inp-com-vso-real').value,
-                comVendMeta: document.getElementById('inp-com-vendidos-meta').value,
-                comVendReal: document.getElementById('inp-com-vendidos-real').value,
-                opePosMeta: document.getElementById('inp-ope-pos-meta').value,
-                opePosReal: document.getElementById('inp-ope-pos-real').value,
-                finMargMeta: document.getElementById('inp-fin-margem-meta').value,
-                finMargReal: document.getElementById('inp-fin-margem-real').value,
-                finDesvio: document.getElementById('inp-fin-desvio-real').value,
-                obras: obras
-            };
-            localStorage.setItem('incorporadora_kpi_state', JSON.stringify(inputs));
-            alert('Configuração de simulação salva com sucesso!');
-        }
-
-
-        // Dispara o clique no input de arquivo oculto para importação
-        function acionarInputImportar() {
-            document.getElementById('inp-importar-json').click();
-        }
-
-        // Exporta todo o estado atual E o histórico de períodos em um único arquivo de dados JSON
-        function exportarDadosCompartilhar() {
-            const dadosCompletos = {
-                estadoAtual: {
-                    expLancMeta: document.getElementById('inp-exp-lancados-meta').value,
-                    expLancReal: document.getElementById('inp-exp-lancados-real').value,
-                    comVsoMeta: document.getElementById('inp-com-vso-meta').value,
-                    comVsoReal: document.getElementById('inp-com-vso-real').value,
-                    comVendMeta: document.getElementById('inp-com-vendidos-meta').value,
-                    comVendReal: document.getElementById('inp-com-vendidos-real').value,
-                    opePosMeta: document.getElementById('inp-ope-pos-meta').value,
-                    opePosReal: document.getElementById('inp-ope-pos-real').value,
-                    finMargMeta: document.getElementById('inp-fin-margem-meta').value,
-                    finMargReal: document.getElementById('inp-fin-margem-real').value,
-                    finDesvio: document.getElementById('inp-fin-desvio-real').value,
-                    obras: obras
-                },
-                historicoSalvo: historico
-            };
-
-            const jsonStr = JSON.stringify(dadosCompletos, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", "dados_kpi_incorporadora.json");
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // Importa o arquivo JSON selecionado, atualiza o localStorage e renderiza novamente a tela
-        function importarDadosCompartilhar(event) {
-            const arquivo = event.target.files[0];
-            if (!arquivo) return;
-
-            const leitor = new FileReader();
-            leitor.onload = function(e) {
-                try {
-                    const dadosImportados = JSON.parse(e.target.result);
-                    
-                    if (dadosImportados.estadoAtual && dadosImportados.historicoSalvo) {
-                        // Restaurar estado atual
-                        const state = dadosImportados.estadoAtual;
-                        document.getElementById('inp-exp-lancados-meta').value = state.expLancMeta;
-                        document.getElementById('inp-exp-lancados-real').value = state.expLancReal;
-                        document.getElementById('inp-com-vso-meta').value = state.comVsoMeta;
-                        document.getElementById('inp-com-vso-real').value = state.comVsoReal;
-                        document.getElementById('inp-com-vendidos-meta').value = state.comVendMeta;
-                        document.getElementById('inp-com-vendidos-real').value = state.comVendReal;
-                        document.getElementById('inp-ope-pos-meta').value = state.opePosMeta;
-                        document.getElementById('inp-ope-pos-real').value = state.opePosReal;
-                        document.getElementById('inp-fin-margem-meta').value = state.finMargMeta;
-                        document.getElementById('inp-fin-margem-real').value = state.finMargReal;
-                        document.getElementById('inp-fin-desvio-real').value = state.finDesvio;
-                        obras = state.obras;
-
-                        // Salvar estado atual no localStorage do novo computador/navegador
-                        localStorage.setItem('incorporadora_kpi_state', JSON.stringify(state));
-
-                        // Restaurar histórico
-                        historico = dadosImportados.historicoSalvo;
-                        localStorage.setItem('incorporadora_kpi_history', JSON.stringify(historico));
-
-                        // Renderizar e recalcular
-                        renderObras();
-                        calcularTudo();
-                        renderHistorico();
-
-                        // Limpar o input de arquivo
-                        document.getElementById('inp-importar-json').value = '';
-
-                        alert('Dados e histórico completo sincronizados com sucesso!');
-                    } else {
-                        alert('Formato de arquivo inválido para o sistema.');
-                    }
-                } catch (erro) {
-                    alert('Erro ao carregar o arquivo. Certifique-se de que é um arquivo .json de dados gerado por este painel.');
-                    console.error(erro);
-                }
-            };
-            leitor.readAsText(arquivo);
-        }
-
-        // Função para estruturar todos os dados da simulação e gerar um CSV formatado para Excel em Português
-        function exportarExcel() {
-            let csv = "\uFEFF"; // UTF-8 BOM para garantir acentuação correta no Excel em português
-            
-            // Cabeçalho institucional do arquivo
-            csv += "RELATÓRIO DE SIMULAÇÃO - PERFORMANCE E CRESCIMENTO SAUDÁVEL\n";
-            csv += "Empresa;Incorporadora & Co.\n";
-            csv += "Data de Exportação;" + new Date().toLocaleDateString('pt-BR') + "\n\n";
-            
-            // Resultados Consolidados do Score Geral
-            const scoreFinal = parseFloat(document.getElementById('txt-score-final').innerText);
-            const status = document.getElementById('badge-status').innerText;
-            csv += "SCORE KPI GERAL FINAL;" + scoreFinal.toFixed(1).replace('.', ',') + " / 10\n";
-            csv += "STATUS OPERACIONAL;" + status + "\n\n";
-            
-            // Resumo de Pontuação por Pilar
-            csv += "PILAR ESTRATÉGICO;NOTA DO PILAR (0-10);PESO DE PARTICIPAÇÃO;PONTOS NO SCORE GERAL\n";
-            const pilarExp = parseFloat(document.getElementById('pilar-exp-score').innerText).toFixed(1);
-            csv += "1. Expansão e Ativos;" + pilarExp.replace('.', ',') + ";25%;" + (pilarExp * 0.25).toFixed(2).replace('.', ',') + "\n";
-            const pilarCom = parseFloat(document.getElementById('pilar-com-score').innerText).toFixed(1);
-            csv += "2. Comercial & Giro;" + pilarCom.replace('.', ',') + ";35%;" + (pilarCom * 0.35).toFixed(2).replace('.', ',') + "\n";
-            const pilarOpe = parseFloat(document.getElementById('pilar-ope-score').innerText).toFixed(1);
-            csv += "3. Operações & Entrega;" + pilarOpe.replace('.', ',') + ";20%;" + (pilarOpe * 0.20).toFixed(2).replace('.', ',') + "\n";
-            const pilarFin = parseFloat(document.getElementById('pilar-fin-score').innerText).toFixed(1);
-            csv += "4. Eficiência & Financeiro;" + pilarFin.replace('.', ',') + ";20%;" + (pilarFin * 0.20).toFixed(2).replace('.', ',') + "\n\n";
-            
-            // Detalhamento de cada Métrica e Nota individual
-            csv += "MATRIZ DE INDICADORES INDIVIDUAIS\n";
-            csv += "Pilar;Indicador;Meta Planejada;Realizado no Período;Nota Obtida (0-10)\n";
-            
-            csv += "Expansão;M² Lançados no Ano;" + document.getElementById('inp-exp-lancados-meta').value + " m²;" + document.getElementById('inp-exp-lancados-real').value + " m²;" + parseFloat(document.getElementById('note-exp-lancados').innerText).toFixed(1).replace('.', ',') + "\n";
-            csv += "Expansão;M² Produzidos no Ano;" + totalMetaAnualGlobal.toFixed(0) + " m²;" + totalProduzidoRealGlobal.toFixed(0) + " m²;" + parseFloat(document.getElementById('note-exp-produzidos').innerText).toFixed(1).replace('.', ',') + "\n";
-            csv += "Comercial;VSO Média Mensal;" + document.getElementById('inp-com-vso-meta').value + "%;" + document.getElementById('inp-com-vso-real').value + "%;" + parseFloat(document.getElementById('note-com-vso').innerText).toFixed(1).replace('.', ',') + "\n";
-            csv += "Comercial;M² Vendidos (Volume);" + document.getElementById('inp-com-vendidos-meta').value + " m²;" + document.getElementById('inp-com-vendidos-real').value + " m²;" + parseFloat(document.getElementById('note-com-vendidos').innerText).toFixed(1).replace('.', ',') + "\n";
-            csv += "Operação;Qualidade no Pós-Obra (Vistorias);" + document.getElementById('inp-ope-pos-meta').value + "%;" + document.getElementById('inp-ope-pos-real').value + "%;" + parseFloat(document.getElementById('note-ope-pos').innerText).toFixed(1).replace('.', ',') + "\n";
-            csv += "Operação;Desvio de Cronograma (Obras);0%;" + desvioPonderadoGlobal.toFixed(1) + "%;" + parseFloat(document.getElementById('note-ope-desvio').innerText).toFixed(1).replace('.', ',') + "\n";
-            csv += "Financeiro;Margem Bruta Média;" + document.getElementById('inp-fin-margem-meta').value + "%;" + document.getElementById('inp-fin-margem-real').value + "%;" + parseFloat(document.getElementById('note-fin-margem').innerText).toFixed(1).replace('.', ',') + "\n";
-            csv += "Financeiro;Desvio Orçamentário (Estouro);0%;" + document.getElementById('inp-fin-desvio-real').value + "%;" + parseFloat(document.getElementById('note-fin-desvio').innerText).toFixed(1).replace('.', ',') + "\n\n";
-            
-            // Portfólio de Obras Físicas (Cálculo de M² Equivalente)
-            csv += "CARTEIRA DE EMPREENDIMENTOS (M² EQUIVALENTE)\n";
-            csv += "Empreendimento;Área Total (M²);Progresso Início Ano (%);Progresso Fim Ano Planejado (%);Progresso Fim Ano Real (%);Desvio de Obra (%);Produzido Real (M²);Meta do Ano (M²)\n";
-            obras.forEach(o => {
-                const desvio = Math.max(0, o.pctFimPlanejado - o.pctFim);
-                const evolucaoReal = Math.max(0, o.pctFim - o.pctInicio);
-                const prodReal = o.areaTotal * (evolucaoReal / 100);
-                const evolucaoPlan = Math.max(0, o.pctFimPlanejado - o.pctInicio);
-                const metaAnual = o.areaTotal * (evolucaoPlan / 100);
-                csv += `${o.nome};${o.areaTotal};${o.pctInicio}%;${o.pctFimPlanejado}%;${o.pctFim}%;${desvio.toFixed(1)}%;${prodReal.toFixed(0)};${metaAnual.toFixed(0)}\n`;
-            });
-            
-            // Criação e download do arquivo CSV adaptado para o Excel do Brasil
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "Performance_KPI_Incorporadora_" + new Date().toISOString().slice(0,10) + ".csv");
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function carregarEstado() {
-            const stateString = localStorage.getItem('incorporadora_kpi_state');
-            if (stateString) {
-                const state = JSON.parse(stateString);
-                document.getElementById('inp-exp-lancados-meta').value = state.expLancMeta;
-                document.getElementById('inp-exp-lancados-real').value = state.expLancReal;
-                document.getElementById('inp-com-vso-meta').value = state.comVsoMeta;
-                document.getElementById('inp-com-vso-real').value = state.comVsoReal;
-                document.getElementById('inp-com-vendidos-meta').value = state.comVendMeta;
-                document.getElementById('inp-com-vendidos-real').value = state.comVendReal;
-                document.getElementById('inp-ope-pos-meta').value = state.opePosMeta;
-                document.getElementById('inp-ope-pos-real').value = state.opePosReal;
-                document.getElementById('inp-fin-margem-meta').value = state.finMargMeta;
-                document.getElementById('inp-fin-margem-real').value = state.finMargReal;
-                document.getElementById('inp-fin-desvio-real').value = state.finDesvio;
-                obras = state.obras;
-            }
-        }
-
-        function resetarDados() {
-            if (confirm('Deseja realmente limpar todos os dados e restaurar as metas padrão?')) {
-                localStorage.removeItem('incorporadora_kpi_state');
-                obras = [
-                    { id: 1, nome: "Residencial Alvorada", areaTotal: 10000, pctInicio: 60, pctFimPlanejado: 95, pctFim: 90 },
-                    { id: 2, nome: "Condomínio Bella Vista", areaTotal: 15000, pctInicio: 0, pctFimPlanejado: 25, pctFim: 20 },
-                    { id: 3, nome: "Edifício Horizon", areaTotal: 8000, pctInicio: 20, pctFimPlanejado: 65, pctFim: 70 }
-                ];
-                
-                document.getElementById('inp-exp-lancados-meta').value = 20000;
-                document.getElementById('inp-exp-lancados-real').value = 18000;
-                document.getElementById('inp-com-vso-meta').value = 12;
-                document.getElementById('inp-com-vso-real').value = 10;
-                document.getElementById('inp-com-vendidos-meta').value = 15000;
-                document.getElementById('inp-com-vendidos-real').value = 14500;
-                document.getElementById('inp-ope-pos-meta').value = 90;
-                document.getElementById('inp-ope-pos-real').value = 85;
-                document.getElementById('inp-fin-margem-meta').value = 35;
-                document.getElementById('inp-fin-margem-real').value = 33;
-                document.getElementById('inp-fin-desvio-real').value = 4;
-
-                renderObras();
-                calcularTudo();
-            }
-        }
-
-        // Inicialização
-        window.onload = function() {
-            carregarEstado();
-            renderObras();
-            calcularTudo();
-            renderHistorico();
+        // CONFIGURAÇÃO DO FIREBASE
+        // (Substitua estes valores pelos dados do seu console do Firebase mais tarde)
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY_AQUI",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            projectId: "SEU_PROJETO",
+            storageBucket: "SEU_PROJETO.appspot.com",
+            messagingSenderId: "SEU_ID",
+            appId: "SEU_APP_ID"
         };
+
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // MONITOR DE SESSÃO: Detecta em tempo real se o usuário está logado ou não
+        auth.onAuthStateChanged((user) => {
+            const loginScreen = document.getElementById('login-screen');
+            const dashboardScreen = document.getElementById('dashboard-screen');
+
+            if (user) {
+                // Usuário logou com sucesso!
+                loginScreen.classList.add('hidden');
+                dashboardScreen.classList.remove('hidden');
+                carregarDadosDoBanco();
+            } else {
+                // Usuário deslogado ou sessão expirada
+                loginScreen.classList.remove('hidden');
+                dashboardScreen.classList.add('hidden');
+            }
+        });
+
+        // FUNÇÃO: Executa o login no Firebase
+        function fazerLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('error-message');
+
+            auth.signInWithEmailAndPassword(email, password)
+                .catch((error) => {
+                    errorMessage.innerText = "Usuário ou senha incorretos.";
+                    console.error(error);
+                });
+        }
+
+        // FUNÇÃO: Busca os KPIs reais protegidos no banco de dados Firestore
+        function carregarDadosDoBanco() {
+            // Acessa a coleção "kpis" e o documento "faturamento"
+            db.collection("kpis").doc("faturamento").get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const dados = doc.data();
+                        document.getElementById('faturamento-valor').innerText = dados.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    } else {
+                        document.getElementById('faturamento-valor').innerText = "Sem dados";
+                    }
+                })
+                .catch((error) => {
+                    console.error("Erro ao buscar dados do banco: ", error);
+                });
+        }
+
+        // FUNÇÃO: Encerra a sessão de forma segura
+        function fazerLogout() {
+            auth.signOut();
+        }
     </script>
 </body>
 </html>
