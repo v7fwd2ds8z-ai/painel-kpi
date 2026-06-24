@@ -601,11 +601,18 @@
                 });
         }
 
-  // Função de Logout (Botão Sair)
+ // Função de Logout (Botão Sair)
 function ejecutarLogout() {
     if (confirm("Deseja realmente sair do painel?")) {
         firebase.auth().signOut().then(() => {
-            // Em vez de reload(), força ir para o index puro limpando o histórico de envio
+            // Tenta encontrar os campos de email/senha e limpa o valor deles
+            // Isso desarma o preenchimento automático do Safari antes do reload
+            const emailField = document.querySelector('input[type="email"]');
+            const passwordField = document.querySelector('input[type="password"]');
+            if (emailField) emailField.value = '';
+            if (passwordField) passwordField.value = '';
+
+            // Força o redirecionamento limpo
             window.location.href = "index.html"; 
         }).catch((error) => {
             console.error("Erro ao sair:", error);
