@@ -602,11 +602,17 @@
         }
 
         // Função de Logout (Botão Sair)
-        function ejecutarLogout() {
-            if (confirm("Deseja realmente sair do painel?")) {
-                firebase.auth().signOut();
-            }
-        }
+function ejecutarLogout() {
+    if (confirm("Deseja realmente sair do painel?")) {
+        firebase.auth().signOut().then(() => {
+            // Recarrega a página atual para limpar o estado do painel e voltar pro login
+            window.location.reload(); 
+        }).catch((error) => {
+            console.error("Erro ao sair:", error);
+            alert("Erro ao tentar sair da conta. Tente novamente.");
+        });
+    }
+}
 
         // --- LÓGICA CORE DO SEU PAINEL (MANTIDA INTACTA) ---
         let obras = [
