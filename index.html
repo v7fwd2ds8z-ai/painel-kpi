@@ -601,15 +601,14 @@
                 });
         }
 
-        // Função de Logout (Botão Sair)
+  // Função de Logout (Botão Sair)
 function ejecutarLogout() {
     if (confirm("Deseja realmente sair do painel?")) {
         firebase.auth().signOut().then(() => {
-            // Recarrega a página atual para limpar o estado do painel e voltar pro login
-            window.location.reload(); 
+            // Em vez de reload(), força ir para o index puro limpando o histórico de envio
+            window.location.href = "index.html"; 
         }).catch((error) => {
             console.error("Erro ao sair:", error);
-            alert("Erro ao tentar sair da conta. Tente novamente.");
         });
     }
 }
